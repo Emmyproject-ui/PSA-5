@@ -5,10 +5,12 @@ import { useState, useRef } from "react"
 import { User, Camera, CheckCircle2, Mail, Save, Loader2 } from "lucide-react"
 import toast from "react-hot-toast"
 import { customerApi } from "@/lib/api"
+import { api } from "@/lib/api"
 
 export default function MyProfilePage() {
-  const { user, isLoading } = useAuth()
-  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const { user, isLoading, setUser } = useAuth()
+  const [profileImage, setProfileImage] = useState<string | null>(user?.avatar || null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState(user?.name || '')
   const [email] = useState(user?.email || '')
@@ -94,12 +96,30 @@ export default function MyProfilePage() {
                 ref={fileInputRef}
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0]
-                  if (file) {
-                    const reader = new FileReader()
-                    reader.onloadend = () => setProfileImage(reader.result as string)
-                    reader.readAsDataURL(file)
+                  if (!file) return
+                  // Show preview immediately
+                  setProfileImage(URL.createObjectURL(file))
+                  // Upload to backend
+                  setUploadingAvatar(true)
+                  try {
+                    const form = new FormData()
+                    form.append('avatar', file)
+                    const res = await api.post('/settings/avatar', form, {
+                      headers: { 'Content-Type': 'multipart/form-data' },
+                    })
+                    const url = res.data?.data?.avatar
+                    if (url) {
+                      setProfileImage(url)
+                      // Persist in auth context so sidebar/header shows it too
+                      if (setUser) setUser((prev: any) => ({ ...prev, avatar: url }))
+                    }
+                    toast.success('Profile photo updated!')
+                  } catch {
+                    toast.error('Failed to upload photo')
+                  } finally {
+                    setUploadingAvatar(false)
                   }
                 }}
               />

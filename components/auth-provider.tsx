@@ -1,15 +1,16 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { authApi } from "@/lib/api"
 import { tokenService, User } from "@/services/storage/token.service"
 
-export type UserRole = "admin" | "user" | "guest"
+export type UserRole = "admin" | "customer" | "user" | "guest"
 
 interface AuthContextType {
   user: User | null
   isLoading: boolean
+  setUser: React.Dispatch<React.SetStateAction<User | null>>
   login: (email: string, password: string) => Promise<void>
   signup: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
@@ -97,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, setUser, isLoading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   )

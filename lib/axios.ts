@@ -25,13 +25,15 @@ interface ApiErrorResponse {
  */
 const api: AxiosInstance = axios.create({
     baseURL: env.NEXT_PUBLIC_API_URL,
-    timeout: 10000, // 10 seconds
+    timeout: 30000, // 30 seconds — XAMPP/Laravel can be slow on cold start
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     },
-    withCredentials: true, // Specific for Laravel Sanctum/CSRF if needed, otherwise harmless
+    withCredentials: false, // Pure token auth — no cookies needed
 });
+
+console.log('Axios initialized with baseURL:', api.defaults.baseURL);
 
 // --- Interceptors ---
 
@@ -41,8 +43,12 @@ const api: AxiosInstance = axios.create({
  */
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        // Only access tokenService on client-side
-        if (typeof window !== 'undefined') {
+        console.log(`[Axios Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+        // Never send Authorization header on public auth endpoints
+        const publicPaths = ['/login', '/register', '/signup'];
+        const isPublicAuth = publicPaths.some(path => config.url?.endsWith(path));
+
+        if (typeof window !== 'undefined' && !isPublicAuth) {
             const token = tokenService.getToken();
             if (token && config.headers) {
                 config.headers.Authorization = `Bearer ${token}`;
@@ -61,14 +67,25 @@ api.interceptors.request.use(
  */
 api.interceptors.response.use(
     (response: AxiosResponse) => {
+        console.log(`[Axios Response] ${response.status} ${response.config.url}`);
         return response;
     },
     async (error: AxiosError<ApiErrorResponse>) => {
         const originalRequest = error.config;
+        console.error(`[Axios Error] ${error.code} | ${error.message} | URL: ${originalRequest?.url}`);
 
-        // Handle Network Errors
+        // Handle request timeout and low-level transport errors
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            console.error('Request timed out after 30 seconds. Check if the backend is reachable from the browser network tab.');
+            return Promise.reject(new Error('Request timed out. Please try again.'));
+        }
+
+        if (error.code === 'ERR_CANCELED') {
+            return Promise.reject(new Error('Request was canceled.'));
+        }
+
         if (!error.response) {
-            return Promise.reject(new Error('Network error. Please check your connection.'));
+            return Promise.reject(new Error('Unable to reach the server. Please check API availability and CORS configuration.'));
         }
 
         const { status, data } = error.response;

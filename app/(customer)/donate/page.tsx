@@ -5,13 +5,15 @@ import { usePaystackPayment } from 'react-paystack'
 import toast from 'react-hot-toast'
 import { Heart, ShieldCheck, Sparkles, Trophy, ArrowRight } from 'lucide-react'
 import { customerApi } from '@/lib/api'
+import { useAuth } from '@/components/auth-provider'
 
 export default function DonatePage() {
+  const { user } = useAuth()
   const [amount, setAmount] = useState('5000')
   const [customAmount, setCustomAmount] = useState('')
   const [donationType, setDonationType] = useState('once')
-  const [email, setEmail] = useState('')
-  const [fullName, setFullName] = useState('')
+  const email = user?.email || ''
+  const fullName = user?.name || ''
 
   const presetAmounts = ['1000', '5000', '10000', '50000']
 
@@ -157,10 +159,10 @@ export default function DonatePage() {
                       <input
                         type="text"
                         required
+                        readOnly
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-primary focus:bg-white dark:focus:bg-slate-900 outline-none font-semibold text-slate-700 dark:text-slate-200 transition-all"
-                        placeholder="John Doe"
+                        className="w-full px-6 py-4 bg-slate-100 dark:bg-slate-800/60 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-semibold text-slate-600 dark:text-slate-300 cursor-not-allowed transition-all"
+                        placeholder="Your name from your account"
                       />
                     </div>
                     <div className="space-y-2">
@@ -168,10 +170,10 @@ export default function DonatePage() {
                       <input
                         type="email"
                         required
+                        readOnly
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-primary focus:bg-white dark:focus:bg-slate-900 outline-none font-semibold text-slate-700 dark:text-slate-200 transition-all"
-                        placeholder="john@example.com"
+                        className="w-full px-6 py-4 bg-slate-100 dark:bg-slate-800/60 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-semibold text-slate-600 dark:text-slate-300 cursor-not-allowed transition-all"
+                        placeholder="Your email from your account"
                       />
                     </div>
                   </div>

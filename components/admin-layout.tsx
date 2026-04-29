@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LogOut, Users, LayoutDashboard, Heart, HandHeart, Settings, Search, Bell, Menu, X } from 'lucide-react'
+import { LogOut, Users, LayoutDashboard, Heart, HandHeart, Settings, Search, Bell, Menu, X, BookOpen, FolderKanban } from 'lucide-react'
 import { useAuth } from '@/components/auth-provider'
 
 interface AdminLayoutProps {
@@ -17,6 +17,8 @@ const NAV_ITEMS = [
   { href: '/admin/users', icon: Users, label: 'Users', badge: 7 },
   { href: '/admin/contributions', icon: Heart, label: 'Donations' },
   { href: '/admin/volunteers', icon: HandHeart, label: 'Volunteers' },
+  { href: '/admin/blog', icon: BookOpen, label: 'Blog Posts' },
+  { href: '/admin/projects', icon: FolderKanban, label: 'Projects' },
   { href: '/admin/security', icon: Settings, label: 'Settings' },
 ]
 

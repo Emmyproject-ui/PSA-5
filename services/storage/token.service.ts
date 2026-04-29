@@ -12,7 +12,7 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    role: 'admin' | 'user' | 'guest';
+    role: 'admin' | 'customer' | 'user' | 'guest';
 }
 
 class TokenService {

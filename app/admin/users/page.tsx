@@ -10,6 +10,7 @@ interface User {
   name: string
   email: string
   role: string
+  avatar: string | null
   created_at: string
   updated_at: string
 }
@@ -138,9 +139,18 @@ export default function AdminUsersPage() {
                   <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-bold">
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
+                        {user.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="h-10 w-10 rounded-full object-cover border-2 border-slate-100 flex-shrink-0"
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                         <span className="font-bold text-slate-800">{user.name}</span>
                       </div>
                     </td>

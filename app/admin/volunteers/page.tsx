@@ -21,6 +21,13 @@ export default function AdminVolunteersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [actionLoading, setActionLoading] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 4000)
+  }
 
   const fetchVolunteers = async () => {
     setLoading(true)
@@ -38,6 +45,32 @@ export default function AdminVolunteersPage() {
   useEffect(() => {
     fetchVolunteers()
   }, [])
+
+  const handleApprove = async (id: number) => {
+    setActionLoading(id)
+    try {
+      await adminApi.approveVolunteer(id)
+      showToast('Volunteer approved successfully!', 'success')
+      await fetchVolunteers()
+    } catch (e: any) {
+      showToast(e.message || 'Failed to approve volunteer', 'error')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleReject = async (id: number) => {
+    setActionLoading(id)
+    try {
+      await adminApi.rejectVolunteer(id)
+      showToast('Volunteer rejected.', 'success')
+      await fetchVolunteers()
+    } catch (e: any) {
+      showToast(e.message || 'Failed to reject volunteer', 'error')
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
   const filteredVolunteers = volunteers.filter(v => 
     v.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,6 +97,18 @@ export default function AdminVolunteersPage() {
 
   return (
     <AdminLayout title="Volunteer Management">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-lg border transition-all animate-in slide-in-from-top-2 ${
+          toast.type === 'success'
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle className="h-5 w-5 text-emerald-600" /> : <XCircle className="h-5 w-5 text-red-600" />}
+          <span className="font-semibold text-sm">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 text-slate-400 hover:text-slate-600">&times;</button>
+        </div>
+      )}
       {/* Search & Actions */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
         <div className="relative flex-1">
@@ -150,6 +195,7 @@ export default function AdminVolunteersPage() {
                   <th className="text-left px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Contact</th>
                   <th className="text-left px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Status</th>
                   <th className="text-left px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Joined</th>
+                  <th className="text-left px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -187,11 +233,35 @@ export default function AdminVolunteersPage() {
                         {new Date(volunteer.created_at).toLocaleDateString()}
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {volunteer.status !== 'approved' && (
+                          <button
+                            onClick={() => handleApprove(volunteer.id)}
+                            disabled={actionLoading === volunteer.id}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <CheckCircle size={14} />
+                            {actionLoading === volunteer.id ? 'Processing...' : 'Approve'}
+                          </button>
+                        )}
+                        {volunteer.status !== 'rejected' && (
+                          <button
+                            onClick={() => handleReject(volunteer.id)}
+                            disabled={actionLoading === volunteer.id}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <XCircle size={14} />
+                            {actionLoading === volunteer.id ? 'Processing...' : 'Reject'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
                 {filteredVolunteers.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                       No volunteers found
                     </td>
                   </tr>

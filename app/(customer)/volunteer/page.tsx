@@ -5,11 +5,13 @@ import type React from "react"
 import { useState } from "react"
 import toast from "react-hot-toast"
 import { customerApi } from "@/lib/api"
+import { useAuth } from "@/components/auth-provider"
 
 export default function VolunteerPage() {
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
+    fullName: user?.name || "",
+    email: user?.email || "",
     phone: "",
     interests: [] as string[],
     availability: "",
@@ -88,8 +90,9 @@ export default function VolunteerPage() {
                   value={formData.fullName}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-border dark:border-slate-800 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-gray-100 transition-colors"
-                  placeholder="John Doe"
+                  readOnly
+                  className="w-full px-4 py-2 border border-border dark:border-slate-800 rounded-lg bg-gray-50 dark:bg-slate-700 focus:outline-none text-gray-700 dark:text-gray-200 cursor-not-allowed transition-colors"
+                  placeholder="Your name from your account"
                 />
               </div>
 
@@ -101,8 +104,9 @@ export default function VolunteerPage() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-border dark:border-slate-800 rounded-lg bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary text-gray-900 dark:text-gray-100 transition-colors"
-                  placeholder="john@example.com"
+                  readOnly
+                  className="w-full px-4 py-2 border border-border dark:border-slate-800 rounded-lg bg-gray-50 dark:bg-slate-700 focus:outline-none text-gray-700 dark:text-gray-200 cursor-not-allowed transition-colors"
+                  placeholder="Your email from your account"
                 />
               </div>
 

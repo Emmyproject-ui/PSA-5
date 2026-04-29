@@ -1,50 +1,39 @@
 'use client'
 
 import Footer from "@/components/footer"
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { projectApi } from "@/lib/api"
+import { Loader2 } from "lucide-react"
 
-const allProjects = [
-  {
-    id: 1,
-    title: 'Rural Education Program',
-    category: 'Education',
-    description: 'Providing quality education to underprivileged children in rural areas. We build schools and provide scholarships.',
-    image: '/rural-classroom.jpg',
-    fullDescription: 'Our Rural Education Program aims to provide quality education to children in remote areas who lack access to proper schooling. We build infrastructure, train teachers, and provide learning materials.'
-  },
-  {
-    id: 2,
-    title: 'Healthcare Outreach',
-    category: 'Healthcare',
-    description: 'Free health camps and medical services in underserved communities.',
-    image: '/medical-clinic.png',
-    fullDescription: 'Regular health camps offering free medical check-ups, medicines, and health awareness programs to underserved communities.'
-  },
-  {
-    id: 3,
-    title: 'Community Development',
-    category: 'Social Welfare',
-    description: 'Building sustainable livelihood programs for low-income families.',
-    image: '/vibrant-community-center.png',
-    fullDescription: 'We work with communities to create sustainable livelihood opportunities through skill training and microfinance support.'
-  },
-  {
-    id: 4,
-    title: 'Environmental Conservation',
-    category: 'Environment',
-    description: 'Tree plantation and environmental awareness initiatives.',
-    image: '/environmental-conservation.jpg',
-    fullDescription: 'Our environmental programs focus on tree plantation, waste management, and promoting sustainable practices.'
-  },
+// Static fallback data
+const staticProjects = [
+  { id: 1, title: 'Rural Education Program', category: 'Education', description: 'Providing quality education to underprivileged children in rural areas.', image: '/rural-classroom.jpg', full_description: 'Our Rural Education Program aims to provide quality education to children in remote areas.' },
+  { id: 2, title: 'Healthcare Outreach', category: 'Healthcare', description: 'Free health camps and medical services in underserved communities.', image: '/medical-clinic.png', full_description: 'Regular health camps offering free medical check-ups and health awareness programs.' },
+  { id: 3, title: 'Community Development', category: 'Social Welfare', description: 'Building sustainable livelihood programs for low-income families.', image: '/vibrant-community-center.png', full_description: 'We work with communities to create sustainable livelihood opportunities.' },
+  { id: 4, title: 'Environmental Conservation', category: 'Environment', description: 'Tree plantation and environmental awareness initiatives.', image: '/environmental-conservation.jpg', full_description: 'Our environmental programs focus on tree plantation and sustainable practices.' },
 ]
 
 export default function ProjectsPage() {
+  const [projects, setProjects] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('All')
-  
-  const categories = ['All', 'Education', 'Healthcare', 'Social Welfare', 'Environment']
-  const filteredProjects = selectedCategory === 'All' 
-    ? allProjects 
-    : allProjects.filter(p => p.category === selectedCategory)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await projectApi.getProjects()
+        setProjects(data && data.length > 0 ? data : staticProjects)
+      } catch {
+        setProjects(staticProjects)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const categories = ['All', ...Array.from(new Set(projects.map((p: any) => p.category)))]
+  const filteredProjects = selectedCategory === 'All' ? projects : projects.filter(p => p.category === selectedCategory)
 
   return (
     <>
@@ -75,26 +64,34 @@ export default function ProjectsPage() {
               ))}
             </div>
 
-            {/* Projects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProjects.map((project) => (
-                <div key={project.id} className="bg-white dark:bg-slate-900 rounded-lg shadow-md hover:shadow-lg dark:shadow-none border dark:border-slate-800 transition overflow-hidden font-primary">
-                  <img
-                    src={project.image || "/placeholder.svg"}
-                    alt={project.title}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-6">
-                    <span className="inline-block bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-400 px-3 py-1 rounded-full text-sm font-semibold mb-3">
-                      {project.category}
-                    </span>
-                    <h3 className="text-xl font-bold text-foreground dark:text-gray-100 mb-2 transition-colors">{project.title}</h3>
-                    <p className="text-muted-foreground dark:text-gray-400 mb-4 transition-colors">{project.description}</p>
-                    <p className="text-sm text-muted-foreground dark:text-gray-500 transition-colors italic">{project.fullDescription}</p>
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredProjects.map((project) => (
+                  <div key={project.id} className="bg-white dark:bg-slate-900 rounded-lg shadow-md hover:shadow-lg dark:shadow-none border dark:border-slate-800 transition overflow-hidden font-primary">
+                    <img
+                      src={project.image || "/placeholder.svg"}
+                      alt={project.title}
+                      className="w-full h-48 object-cover"
+                      onError={e => { (e.target as HTMLImageElement).src = '/placeholder.svg' }}
+                    />
+                    <div className="p-6">
+                      <span className="inline-block bg-primary/10 dark:bg-primary/20 text-primary dark:text-blue-400 px-3 py-1 rounded-full text-sm font-semibold mb-3">
+                        {project.category}
+                      </span>
+                      <h3 className="text-xl font-bold text-foreground dark:text-gray-100 mb-2 transition-colors">{project.title}</h3>
+                      <p className="text-muted-foreground dark:text-gray-400 mb-4 transition-colors">{project.description}</p>
+                      {project.full_description && (
+                        <p className="text-sm text-muted-foreground dark:text-gray-500 transition-colors italic">{project.full_description}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>

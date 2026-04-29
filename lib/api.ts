@@ -32,6 +32,8 @@ export const adminApi = {
     getPayments: () => api.get('/admin/payments').then(res => res.data?.data?.data || []),
     getContributions: () => api.get('/admin/contributions').then(res => res.data?.data || []), // Non-paginated array
     getVolunteers: () => api.get('/admin/volunteers').then(res => res.data?.data?.data || []),
+    approveVolunteer: (id: number) => api.patch(`/admin/volunteers/${id}/approve`).then(res => res.data),
+    rejectVolunteer: (id: number) => api.patch(`/admin/volunteers/${id}/reject`).then(res => res.data),
     getMessages: () => api.get('/admin/messages').then(res => res.data?.data?.data || []),
     getStats: () => api.get('/admin/stats').then(res => res.data?.data || {}),
     getActivityLogs: () => api.get('/admin/activity-logs').then(res => res.data?.data?.data || []),
@@ -51,6 +53,30 @@ export const contactApi = {
     sendMessage: (data: any) => api.post('/contact', data).then(res => res.data?.data),
 };
 
+// --- Blog API ---
+export const blogApi = {
+    // Public
+    getPosts: () => api.get('/blog').then(res => res.data?.data || []),
+    getPost: (slug: string) => api.get(`/blog/${slug}`).then(res => res.data?.data),
+    // Admin
+    adminGetPosts: () => api.get('/admin/blog').then(res => res.data?.data || []),
+    createPost: (form: FormData) => api.post('/admin/blog', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => res.data?.data),
+    updatePost: (id: number, form: FormData) => api.post(`/admin/blog/${id}`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => res.data?.data),
+    deletePost: (id: number) => api.delete(`/admin/blog/${id}`).then(res => res.data),
+    uploadImage: (form: FormData) => api.post('/admin/upload', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => res.data?.data),
+};
+
+// --- Project API ---
+export const projectApi = {
+    // Public
+    getProjects: () => api.get('/projects').then(res => res.data?.data || []),
+    // Admin
+    adminGetProjects: () => api.get('/admin/projects').then(res => res.data?.data || []),
+    createProject: (form: FormData) => api.post('/admin/projects', form, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => res.data?.data),
+    updateProject: (id: number, form: FormData) => api.post(`/admin/projects/${id}`, form, { headers: { 'Content-Type': 'multipart/form-data' } }).then(res => res.data?.data),
+    deleteProject: (id: number) => api.delete(`/admin/projects/${id}`).then(res => res.data),
+};
+
 // Default export
 export { api };
 export default {
@@ -59,4 +85,6 @@ export default {
     admin: adminApi,
     contact: contactApi,
     settings: settingsApi,
+    blog: blogApi,
+    project: projectApi,
 };

@@ -1,10 +1,13 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/components/auth-provider'
+import { customerApi } from '@/lib/api'
 import Link from 'next/link'
 import { Loader2, LayoutDashboard, CreditCard, Heart, User, Bell, Settings, LogOut, Menu, X, CheckCircle2, Globe } from 'lucide-react'
+
+const SEEN_KEY = 'ggnf-notifications-seen-at'
 
 const sidebarLinks = [
   { href: '/customer/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,6 +27,7 @@ export default function CustomerLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [notifBadge, setNotifBadge] = useState(0)
 
   useEffect(() => {
     if (!isLoading) {
@@ -41,6 +45,34 @@ export default function CustomerLayout({
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false)
+  }, [pathname])
+
+  // Fetch notification badge count
+  const refreshBadge = useCallback(async () => {
+    if (!user) return
+    try {
+      const volunteering = await customerApi.getMyVolunteering()
+      const seenAtRaw = typeof window !== 'undefined' ? localStorage.getItem(SEEN_KEY) : null
+      const seenAt = seenAtRaw ? new Date(seenAtRaw) : null
+      const count = volunteering.filter((v: any) => {
+        const decided = v.status === 'approved' || v.status === 'rejected'
+        if (!decided) return false
+        if (!seenAt) return true // never seen → all are new
+        return new Date(v.updated_at || v.created_at) > seenAt
+      }).length
+      setNotifBadge(count)
+    } catch {}
+  }, [user])
+
+  useEffect(() => {
+    refreshBadge()
+  }, [refreshBadge])
+
+  // Clear badge when user navigates to notifications page
+  useEffect(() => {
+    if (pathname === '/customer/notifications') {
+      setNotifBadge(0)
+    }
   }, [pathname])
 
   if (isLoading) {
@@ -109,9 +141,9 @@ export default function CustomerLayout({
               >
                 <link.icon className="h-5 w-5 flex-shrink-0" />
                 <span>{link.label}</span>
-                {link.label === 'Notifications' && (
+                {link.label === 'Notifications' && notifBadge > 0 && (
                   <span className="ml-auto h-5 min-w-[20px] bg-red-500 rounded-full flex items-center justify-center text-[10px] font-bold px-1">
-                    3
+                    {notifBadge}
                   </span>
                 )}
               </Link>

@@ -2,8 +2,10 @@
 
 import { useAuth } from "@/components/auth-provider"
 import { useEffect, useState } from "react"
-import { Heart, CreditCard, HandHeart, Info, Loader2 } from "lucide-react"
+import { Heart, CreditCard, HandHeart, Info, Loader2, CheckCircle, XCircle, Clock } from "lucide-react"
 import { customerApi } from "@/lib/api"
+
+const SEEN_KEY = 'ggnf-notifications-seen-at'
 
 interface NotificationItem {
   id: string
@@ -30,6 +32,17 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString()
 }
 
+function getSeenAt(): Date | null {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY)
+    return raw ? new Date(raw) : null
+  } catch { return null }
+}
+
+function markAsSeen() {
+  try { localStorage.setItem(SEEN_KEY, new Date().toISOString()) } catch {}
+}
+
 export default function NotificationsPage() {
   const { user, isLoading } = useAuth()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
@@ -41,6 +54,7 @@ export default function NotificationsPage() {
     const fetchData = async () => {
       setLoading(true)
       try {
+        const seenAt = getSeenAt()
         const [donations, volunteering] = await Promise.all([
           customerApi.getMyDonations(),
           customerApi.getMyVolunteering(),
@@ -48,7 +62,55 @@ export default function NotificationsPage() {
 
         const items: NotificationItem[] = []
 
-        // Build notifications from real donations
+        // Volunteer notifications — one per application showing current status
+        volunteering.forEach((v: any) => {
+          const statusChangedAt = v.updated_at || v.created_at
+          // Mark as unread if: status is not pending AND changed after the user last viewed notifications
+          const isStatusDecided = v.status === 'approved' || v.status === 'rejected'
+          const isNew = isStatusDecided && seenAt ? new Date(statusChangedAt) > seenAt : isStatusDecided && !seenAt
+
+          let title: string
+          let message: string
+          let icon: typeof CreditCard
+          let color: string
+          let bg: string
+
+          if (v.status === 'approved') {
+            title = '✅ Volunteer Application Approved!'
+            message = `Great news! Your volunteer application for "${v.skills || 'General'}" has been approved. Welcome to the team!`
+            icon = CheckCircle
+            color = 'text-emerald-600'
+            bg = 'bg-emerald-50'
+          } else if (v.status === 'rejected') {
+            title = '❌ Volunteer Application Update'
+            message = `Your volunteer application for "${v.skills || 'General'}" was not approved this time. Feel free to apply again.`
+            icon = XCircle
+            color = 'text-red-500'
+            bg = 'bg-red-50'
+          } else {
+            // pending
+            title = '⏳ Volunteer Application Submitted'
+            message = `Your volunteer application for "${v.skills || 'General'}" is pending review by our team. We'll notify you once a decision is made.`
+            icon = Clock
+            color = 'text-amber-500'
+            bg = 'bg-amber-50'
+          }
+
+          items.push({
+            id: `vol-${v.id}`,
+            type: 'volunteer',
+            title,
+            message,
+            // For decided applications, show WHEN admin acted (updated_at); for pending show applied time
+            time: isStatusDecided ? timeAgo(statusChangedAt) : `Applied ${timeAgo(v.created_at)}`,
+            read: !isNew,
+            icon,
+            color,
+            bg,
+          })
+        })
+
+        // Donation notifications
         donations.forEach((d: any) => {
           items.push({
             id: `don-${d.id}`,
@@ -63,28 +125,7 @@ export default function NotificationsPage() {
           })
         })
 
-        // Build notifications from real volunteer activity
-        volunteering.forEach((v: any) => {
-          items.push({
-            id: `vol-${v.id}`,
-            type: 'volunteer',
-            title: v.status === 'approved' ? 'Volunteer Application Approved' :
-                   v.status === 'rejected' ? 'Volunteer Application Update' :
-                   'Volunteer Application Submitted',
-            message: v.status === 'approved'
-              ? `Your volunteer application for "${v.skills || 'General'}" has been approved!`
-              : v.status === 'rejected'
-              ? `Your volunteer application for "${v.skills || 'General'}" was not approved this time.`
-              : `Your volunteer application for "${v.skills || 'General'}" is pending review.`,
-            time: timeAgo(v.created_at),
-            read: v.status !== 'pending',
-            icon: HandHeart,
-            color: v.status === 'approved' ? 'text-emerald-600' : v.status === 'rejected' ? 'text-red-500' : 'text-amber-500',
-            bg: v.status === 'approved' ? 'bg-emerald-50' : v.status === 'rejected' ? 'bg-red-50' : 'bg-amber-50',
-          })
-        })
-
-        // Add a welcome notification
+        // Welcome notification
         items.push({
           id: 'welcome',
           type: 'system',
@@ -97,13 +138,15 @@ export default function NotificationsPage() {
           bg: 'bg-blue-50',
         })
 
-        // Sort by most recent first (unread first, then by position)
+        // Unread first, then by type
         items.sort((a, b) => (a.read === b.read ? 0 : a.read ? 1 : -1))
         setNotifications(items)
       } catch (e) {
         console.warn("Could not load notifications:", e)
       } finally {
         setLoading(false)
+        // Mark all as seen now that the user has visited this page
+        markAsSeen()
       }
     }
     fetchData()
@@ -124,6 +167,9 @@ export default function NotificationsPage() {
             </span>
           )}
         </div>
+        {unreadCount > 0 && (
+          <span className="text-xs text-gray-400 dark:text-gray-500">{unreadCount} new</span>
+        )}
       </div>
 
       {loading ? (
@@ -140,7 +186,6 @@ export default function NotificationsPage() {
         <div className="space-y-3">
           {notifications.map((notification) => {
             const Icon = notification.icon
-            // Map light bg/color to dark equivalents
             const darkBgMap: Record<string, string> = {
               'bg-emerald-50': 'dark:bg-emerald-950/30',
               'bg-red-50': 'dark:bg-red-950/30',
@@ -149,12 +194,10 @@ export default function NotificationsPage() {
             }
             const darkColorMap: Record<string, string> = {
               'text-emerald-600': 'dark:text-emerald-500',
-              'text-red-50': 'dark:text-red-500', // Note: fix potential typo in original color if it was text-red-50
               'text-amber-500': 'dark:text-amber-400',
               'text-blue-500': 'dark:text-blue-400',
               'text-red-500': 'dark:text-red-400',
             }
-
             const darkBg = darkBgMap[notification.bg] || 'dark:bg-slate-800'
             const darkColor = darkColorMap[notification.color] || notification.color
 
@@ -162,8 +205,8 @@ export default function NotificationsPage() {
               <div
                 key={notification.id}
                 className={`flex items-start gap-4 p-5 bg-white dark:bg-slate-900 border rounded-2xl transition-all hover:shadow-sm font-primary ${
-                  notification.read 
-                  ? 'border-gray-200 dark:border-slate-800' 
+                  notification.read
+                  ? 'border-gray-200 dark:border-slate-800'
                   : 'border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/10'
                 }`}
               >

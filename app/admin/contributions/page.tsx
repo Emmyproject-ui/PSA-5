@@ -105,45 +105,45 @@ export default function AdminContributionsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 min-w-0">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 rounded-xl">
+            <div className="p-3 bg-emerald-50 rounded-xl flex-shrink-0">
               <DollarSign className="h-6 w-6 text-emerald-600" />
             </div>
-            <div>
-              <p className="text-2xl font-black text-slate-800">₦{totalAmount.toLocaleString()}</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-black text-slate-800 truncate">₦{totalAmount.toLocaleString()}</p>
               <p className="text-sm text-slate-500">Total Received</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 min-w-0">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-50 rounded-xl">
+            <div className="p-3 bg-blue-50 rounded-xl flex-shrink-0">
               <CheckCircle className="h-6 w-6 text-blue-600" />
             </div>
-            <div>
-              <p className="text-2xl font-black text-slate-800">₦{completedAmount.toLocaleString()}</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-black text-slate-800 truncate">₦{completedAmount.toLocaleString()}</p>
               <p className="text-sm text-slate-500">Confirmed</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 min-w-0">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-50 rounded-xl">
+            <div className="p-3 bg-purple-50 rounded-xl flex-shrink-0">
               <CreditCard className="h-6 w-6 text-purple-600" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-2xl font-black text-slate-800">{contributions.length}</p>
               <p className="text-sm text-slate-500">Total Transactions</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100">
+        <div className="bg-white p-6 rounded-2xl border border-slate-100 min-w-0">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-amber-50 rounded-xl">
+            <div className="p-3 bg-amber-50 rounded-xl flex-shrink-0">
               <Clock className="h-6 w-6 text-amber-600" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-2xl font-black text-slate-800">{contributions.filter(c => c.status === 'pending').length}</p>
               <p className="text-sm text-slate-500">Pending</p>
             </div>

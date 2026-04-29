@@ -15,6 +15,12 @@ export default function SignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (password.length < 8) {
+      alert("The passwordlength is small")
+      return
+    }
+
     // In a real app, role is determined by backend
     // but for type safety in our context call we pass both email and password now
     await login(email, password)

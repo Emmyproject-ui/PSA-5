@@ -16,6 +16,12 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (password.length < 8) {
+      alert("The passwordlength is small")
+      return
+    }
+
     await signup(name, email, password)
   }
 

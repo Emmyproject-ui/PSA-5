@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuth } from "@/components/auth-provider"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Moon, Bell, Shield, Download, Monitor, Trash2, Clock, CheckCircle2 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useTheme } from "next-themes"
@@ -61,18 +61,22 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setSettings(loadSettings())
-    fetchSessions()
     setMounted(true)
   }, [])
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       const data = await settingsApi.getSessions()
       setSessions(data)
     } catch (error) {
       console.error("Failed to fetch sessions:", error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (isLoading || !user) return
+    fetchSessions()
+  }, [isLoading, user, fetchSessions])
 
   if (isLoading || !user) return null
 
